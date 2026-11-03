@@ -4,7 +4,7 @@ Aplicación web para administrar el catálogo de un club de lectura. Proyecto en
 
 ## Estado actual
 
-Funcionan los tres servicios (Next.js, Spring Boot, PostgreSQL) orquestados con Docker Compose, la **autenticación** completa (registro, login, logout y rutas protegidas) y la **API de libros** (CRUD con validaciones). Las pantallas del catálogo llegan en la siguiente rama.
+Funcionan los tres servicios (Next.js, Spring Boot, PostgreSQL) orquestados con Docker Compose, la **autenticación** completa (registro, login, logout y rutas protegidas), la **API de libros** (CRUD con validaciones) y las **pantallas del catálogo**: listado en tabla, detalle, crear, editar y eliminar con confirmación.
 
 ## Requisitos previos
 
@@ -43,6 +43,21 @@ Se usan **sesiones de Spring Security** (no JWT) con contraseñas hasheadas con 
 - **Rutas protegidas:** el backend responde `401` a cualquier ruta que no sea de autenticación sin sesión. El frontend valida la sesión **contra el backend** en el servidor (`requireUser()`), no sólo comprueba que exista la cookie.
 - **Límite conocido:** las sesiones están en memoria. Si el backend se reinicia, se cierran todas las sesiones; usuarios y libros siguen en PostgreSQL.
 - El login recibe un formulario `application/x-www-form-urlencoded` (así lo procesa Spring Security); el resto de la API usa JSON.
+
+## Pantallas
+
+| Ruta | Pantalla |
+|---|---|
+| `/login`, `/register` | Acceso y registro (públicas). |
+| `/books` | Listado en tabla, con acceso a detalle, edición y borrado. |
+| `/books/new` | Crear libro. |
+| `/books/{id}` | Detalle. |
+| `/books/{id}/edit` | Editar (usa el mismo formulario que crear). |
+
+- Todas las rutas salvo login y registro validan la sesión en el servidor antes de renderizar.
+- Los formularios muestran los errores del backend junto a cada campo (validación, ISBN duplicado) y conservan lo escrito cuando algo falla.
+- Si la sesión caduca mientras se usa una pantalla, se vuelve al login con un aviso. Si el backend no responde, se muestra un mensaje de error en español en lugar de la página por defecto de Next.
+- Borrar pide confirmación en un diálogo; cancelar no modifica nada.
 
 ## Endpoints del backend
 
