@@ -28,6 +28,10 @@ final class BookSpecifications {
         return (root, query, builder) -> builder.equal(builder.lower(root.get("genre")), normalized);
     }
 
+    static Specification<Book> hasReadingStatus(ReadingStatus status) {
+        return (root, query, builder) -> builder.equal(root.get("readingStatus"), status);
+    }
+
     /** Los comodines de LIKE escritos por el usuario (% _) se buscan como texto literal. */
     private static String escapeLike(String text) {
         return text

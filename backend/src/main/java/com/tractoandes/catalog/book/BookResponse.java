@@ -12,6 +12,7 @@ public record BookResponse(
         int publicationYear,
         int pages,
         String synopsis,
+        ReadingStatus readingStatus,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -25,6 +26,7 @@ public record BookResponse(
                 book.getPublicationYear(),
                 book.getPages(),
                 book.getSynopsis(),
+                book.getReadingStatus(),
                 book.getCreatedAt(),
                 book.getUpdatedAt());
     }
