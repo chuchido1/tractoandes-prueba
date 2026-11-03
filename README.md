@@ -69,13 +69,32 @@ Se usan **sesiones de Spring Security** (no JWT) con contraseñas hasheadas con 
 | POST | `/api/auth/logout` | Invalida la sesión (204). |
 | GET | `/api/auth/me` | Usuario de la sesión actual; 401 si no hay sesión. |
 
-| GET | `/api/books` | Lista los libros ordenados por título (alfabético español) y, a igualdad, por id. |
+| GET | `/api/books?q=&genre=&page=&size=` | Lista paginada y filtrada (ver «Búsqueda y paginación»). |
+| GET | `/api/books/genres` | Géneros existentes, sin repetir (alimenta el filtro y las sugerencias del formulario). |
 | GET | `/api/books/{id}` | Detalle de un libro. |
 | POST | `/api/books` | Crea un libro (201 con cabecera `Location`). |
 | PUT | `/api/books/{id}` | Edita un libro (200). |
 | DELETE | `/api/books/{id}` | Elimina un libro (204). |
 
 Todos los errores siguen un formato único: `{ status, code, message, fieldErrors, path, timestamp }`. Códigos HTTP: `400` datos o parámetros inválidos (incluye un `id` que no es UUID), `401` sin sesión, `403` sin permiso o CSRF inválido, `404` libro inexistente, `409` ISBN o correo duplicado.
+
+## Búsqueda y paginación
+
+`GET /api/books` acepta:
+
+| Parámetro | Significado |
+|---|---|
+| `q` | Texto que debe aparecer en el **título O el autor** (contiene). |
+| `genre` | Género exacto. Se combina con `q` mediante **AND**. |
+| `page` | Número de página, desde 0 (por defecto 0). |
+| `size` | Elementos por página, de 1 a 50 (por defecto 10). Fuera de rango → 400. |
+
+- **Mayúsculas y acentos:** `q` y `genre` no distinguen mayúsculas (`GARCÍA` encuentra `García`, también con tilde) pero **sí distinguen acentos** (`garcia` no encuentra `García`). Se usa la collation ICU `es-x-icu` en las columnas, porque con la collation `C` de la imagen Alpine `lower()` no convertiría las mayúsculas con tilde.
+- Los `%` y `_` que escriba el usuario se buscan como texto literal (se escapan). Las consultas son parametrizadas.
+- Un `q` o `genre` vacío o en blanco se ignora.
+- Los filtros se aplican en la base de datos **antes** de paginar. El orden es por título y, a igualdad, por id, así que las páginas son estables.
+- Respuesta: `{ items, page, size, totalItems, totalPages }`. Una página fuera de rango devuelve `items` vacío con los totales correctos.
+- En la interfaz, cambiar un filtro vuelve a la página 1; si se borra el único libro de una página que no es la primera, se retrocede una página. El texto se aplica al pulsar «Buscar» o Intro; el género, al elegirlo.
 
 ## Reglas de los libros
 
