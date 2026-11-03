@@ -4,13 +4,16 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormAlert } from "@/components/form-alert";
+import { errorProps, FormField } from "@/components/form-field";
+import { NativeSelect } from "@/components/native-select";
 import { TextField } from "@/components/text-field";
 import { TextareaField } from "@/components/textarea-field";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api-client";
 import { listGenres } from "@/lib/books-api";
 import { describeError, fieldErrorsOf } from "@/lib/errors";
-import type { Book, BookInput } from "@/lib/types";
+import { READING_STATUSES } from "@/lib/reading-status";
+import type { Book, BookInput, ReadingStatus } from "@/lib/types";
 import { useApiResource } from "@/lib/use-api-resource";
 
 type BookFormProps = {
@@ -40,6 +43,7 @@ function readBookInput(data: FormData): BookInput {
     publicationYear: integer(data, "publicationYear"),
     pages: integer(data, "pages"),
     synopsis: text(data, "synopsis"),
+    readingStatus: text(data, "readingStatus") as ReadingStatus,
   };
 }
 
@@ -138,6 +142,24 @@ export function BookForm({
           error={fieldErrors.pages}
         />
       </div>
+      <FormField
+        name="readingStatus"
+        label="Estado de lectura"
+        error={fieldErrors.readingStatus}
+      >
+        <NativeSelect
+          id="readingStatus"
+          name="readingStatus"
+          defaultValue={initialBook?.readingStatus ?? "PENDIENTE"}
+          {...errorProps("readingStatus", fieldErrors.readingStatus)}
+        >
+          {READING_STATUSES.map((status) => (
+            <option key={status.value} value={status.value}>
+              {status.label}
+            </option>
+          ))}
+        </NativeSelect>
+      </FormField>
       <TextareaField
         name="synopsis"
         label="Sinopsis (opcional)"

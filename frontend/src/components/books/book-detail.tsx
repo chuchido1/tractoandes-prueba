@@ -1,8 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DeleteBookDialog } from "@/components/books/delete-book-dialog";
+import { ReadingStatusBadge } from "@/components/books/reading-status-badge";
 import { LoadError, LoadingMessage } from "@/components/load-state";
 import { Button } from "@/components/ui/button";
 import { getBook } from "@/lib/books-api";
@@ -15,17 +17,18 @@ function formatDate(iso: string): string {
   });
 }
 
-export function BookDetail({ id }: { id: string }) {
+export function BookDetail({ id, canWrite }: { id: string; canWrite: boolean }) {
   const router = useRouter();
   const { data: book, error, reload } = useApiResource(() => getBook(id), id);
 
   if (error) return <LoadError error={error} onRetry={reload} backHref="/books" />;
   if (!book) return <LoadingMessage>Cargando libro…</LoadingMessage>;
 
-  const fields: [string, string | number][] = [
+  const fields: [string, ReactNode][] = [
     ["ISBN", book.isbn],
     ["Autor", book.author],
     ["Género", book.genre],
+    ["Estado de lectura", <ReadingStatusBadge key="status" status={book.readingStatus} />],
     ["Año de publicación", book.publicationYear],
     ["Páginas", book.pages],
     ["Creado", formatDate(book.createdAt)],
@@ -36,12 +39,14 @@ export function BookDetail({ id }: { id: string }) {
     <article className="grid gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-2xl font-semibold">{book.title}</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/books/${book.id}/edit`}>Editar</Link>
-          </Button>
-          <DeleteBookDialog book={book} onDeleted={() => router.push("/books")} />
-        </div>
+        {canWrite && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/books/${book.id}/edit`}>Editar</Link>
+            </Button>
+            <DeleteBookDialog book={book} onDeleted={() => router.push("/books")} />
+          </div>
+        )}
       </div>
       <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
         {fields.map(([label, value]) => (
