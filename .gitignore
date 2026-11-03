@@ -1,0 +1,23 @@
+# Secretos y entorno
+.env
+
+# Documento de la prueba (material privado de la empresa)
+Prueba-tecnica-Fullstack.pdf
+
+# Backend
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+*.tsbuildinfo
+
+# Sistema e IDE
+.DS_Store
+.idea/
+.vscode/
+*.log
