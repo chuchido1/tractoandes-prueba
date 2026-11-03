@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
+import { roleLabel } from "@/lib/permissions";
 import type { User } from "@/lib/types";
 
 export function AppHeader({ user }: { user: User }) {
@@ -10,7 +11,9 @@ export function AppHeader({ user }: { user: User }) {
           Catálogo de libros
         </Link>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{user.name}</span>
+          <span className="text-sm text-muted-foreground">
+            {user.name} · {roleLabel(user.role)}
+          </span>
           <LogoutButton />
         </div>
       </div>

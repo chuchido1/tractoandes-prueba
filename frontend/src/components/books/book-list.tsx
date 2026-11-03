@@ -11,7 +11,7 @@ import { listBooks, listGenres } from "@/lib/books-api";
 import type { Book, BookFilters, Page } from "@/lib/types";
 import { useApiResource } from "@/lib/use-api-resource";
 
-const NO_FILTERS: BookFilters = { q: "", genre: "" };
+const NO_FILTERS: BookFilters = { q: "", genre: "", status: "" };
 
 /** Si la página pedida quedó vacía (p. ej. se borró su último libro), muestra la última que exista. */
 async function fetchPage(filters: BookFilters, page: number): Promise<Page<Book>> {
@@ -22,12 +22,12 @@ async function fetchPage(filters: BookFilters, page: number): Promise<Page<Book>
   return result;
 }
 
-export function BookList() {
+export function BookList({ canWrite }: { canWrite: boolean }) {
   const [filters, setFilters] = useState<BookFilters>(NO_FILTERS);
   const [page, setPage] = useState(0);
   const { data: books, error, loading, reload } = useApiResource(
     () => fetchPage(filters, page),
-    `${filters.q}|${filters.genre}|${page}`,
+    `${filters.q}|${filters.genre}|${filters.status}|${page}`,
   );
   // Los géneros sólo alimentan el filtro: si fallan, el filtro queda sin opciones.
   const { data: genres } = useApiResource(listGenres, "genres");
@@ -46,7 +46,7 @@ export function BookList() {
     }
   }
 
-  const filtering = filters.q !== "" || filters.genre !== "";
+  const filtering = filters.q !== "" || filters.genre !== "" || filters.status !== "";
 
   return (
     <div className="grid gap-4">
@@ -60,13 +60,17 @@ export function BookList() {
       ) : !books ? (
         <LoadingMessage>Cargando libros…</LoadingMessage>
       ) : books.totalItems === 0 ? (
-        <EmptyState filtering={filtering} onClear={() => changeFilters(NO_FILTERS)} />
+        <EmptyState
+          filtering={filtering}
+          canWrite={canWrite}
+          onClear={() => changeFilters(NO_FILTERS)}
+        />
       ) : (
         <div
           aria-busy={loading}
           className={loading ? "grid gap-4 opacity-60" : "grid gap-4"}
         >
-          <BookTable books={books.items} onDeleted={handleDeleted} />
+          <BookTable books={books.items} canWrite={canWrite} onDeleted={handleDeleted} />
           <Pagination page={books} disabled={loading} onPageChange={setPage} />
         </div>
       )}
@@ -74,7 +78,9 @@ export function BookList() {
   );
 }
 
-function EmptyState({ filtering, onClear }: { filtering: boolean; onClear: () => void }) {
+type EmptyStateProps = { filtering: boolean; canWrite: boolean; onClear: () => void };
+
+function EmptyState({ filtering, canWrite, onClear }: EmptyStateProps) {
   if (filtering) {
     return (
       <div className="grid justify-items-center gap-3 py-12 text-center">
@@ -90,9 +96,11 @@ function EmptyState({ filtering, onClear }: { filtering: boolean; onClear: () =>
   return (
     <div className="grid justify-items-center gap-3 py-12 text-center">
       <p className="text-muted-foreground">Todavía no hay libros en el catálogo.</p>
-      <Button asChild>
-        <Link href="/books/new">Agregar el primer libro</Link>
-      </Button>
+      {canWrite && (
+        <Button asChild>
+          <Link href="/books/new">Agregar el primer libro</Link>
+        </Button>
+      )}
     </div>
   );
 }

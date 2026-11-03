@@ -2,6 +2,8 @@ package com.tractoandes.catalog.book;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,6 +42,10 @@ public class Book {
     @Column(name = "sinopsis")
     private String synopsis;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_lectura", nullable = false)
+    private ReadingStatus readingStatus;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -49,12 +55,15 @@ public class Book {
     protected Book() {
     }
 
-    public Book(String isbn, String title, String author, String genre, int publicationYear, int pages, String synopsis) {
-        update(isbn, title, author, genre, publicationYear, pages, synopsis);
+    public Book(
+            String isbn, String title, String author, String genre, int publicationYear, int pages, String synopsis,
+            ReadingStatus readingStatus) {
+        update(isbn, title, author, genre, publicationYear, pages, synopsis, readingStatus);
     }
 
     public void update(
-            String isbn, String title, String author, String genre, int publicationYear, int pages, String synopsis) {
+            String isbn, String title, String author, String genre, int publicationYear, int pages, String synopsis,
+            ReadingStatus readingStatus) {
         this.isbn = isbn;
         this.title = title;
         this.author = author;
@@ -62,6 +71,7 @@ public class Book {
         this.publicationYear = publicationYear;
         this.pages = pages;
         this.synopsis = synopsis;
+        this.readingStatus = readingStatus;
     }
 
     @PrePersist
@@ -105,6 +115,10 @@ public class Book {
 
     public String getSynopsis() {
         return synopsis;
+    }
+
+    public ReadingStatus getReadingStatus() {
+        return readingStatus;
     }
 
     public Instant getCreatedAt() {

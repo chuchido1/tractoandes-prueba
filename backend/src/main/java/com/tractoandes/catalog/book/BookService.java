@@ -27,16 +27,19 @@ public class BookService {
     }
 
     /**
-     * Busca (título O autor contiene el texto) y filtra por género (AND), todo en la base
-     * de datos y antes de paginar. Una página fuera de rango devuelve la lista vacía.
+     * Busca (título O autor contiene el texto) y filtra por género y estado de lectura (todo
+     * combinado con AND), en la base de datos y antes de paginar. Una página fuera de rango devuelve la lista vacía.
      */
-    public Page<Book> search(String text, String genre, int page, int size) {
+    public Page<Book> search(String text, String genre, ReadingStatus status, int page, int size) {
         Specification<Book> filters = Specification.unrestricted();
         if (text != null && !text.isBlank()) {
             filters = filters.and(BookSpecifications.titleOrAuthorContains(text.trim()));
         }
         if (genre != null && !genre.isBlank()) {
             filters = filters.and(BookSpecifications.hasGenre(genre.trim()));
+        }
+        if (status != null) {
+            filters = filters.and(BookSpecifications.hasReadingStatus(status));
         }
         // El id desempata títulos iguales: el orden (y por tanto las páginas) es siempre el mismo.
         return bookRepository.findAll(filters, PageRequest.of(page, size, Sort.by("title", "id")));
@@ -59,7 +62,8 @@ public class BookService {
                 request.genre().trim(),
                 request.publicationYear(),
                 request.pages(),
-                normalizeSynopsis(request.synopsis()));
+                normalizeSynopsis(request.synopsis()),
+                request.readingStatus() != null ? request.readingStatus() : ReadingStatus.PENDIENTE);
         return saveOrReportDuplicate(book);
     }
 
@@ -73,7 +77,8 @@ public class BookService {
                 request.genre().trim(),
                 request.publicationYear(),
                 request.pages(),
-                normalizeSynopsis(request.synopsis()));
+                normalizeSynopsis(request.synopsis()),
+                request.readingStatus() != null ? request.readingStatus() : book.getReadingStatus());
         return saveOrReportDuplicate(book);
     }
 

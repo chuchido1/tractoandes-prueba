@@ -1,7 +1,9 @@
 package com.tractoandes.catalog.common.error;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
@@ -119,6 +121,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         Class<?> target = mismatch.getTargetType();
         if (target == Integer.class || target == int.class) {
             return "Debe ser un número entero.";
+        }
+        if (target != null && target.isEnum()) {
+            return "Valor no permitido. Valores válidos: "
+                    + Arrays.stream(target.getEnumConstants()).map(Object::toString).collect(Collectors.joining(", "))
+                    + ".";
         }
         return "El valor no tiene el formato esperado.";
     }

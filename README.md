@@ -4,7 +4,7 @@ Aplicación web para administrar el catálogo de un club de lectura. Proyecto en
 
 ## Estado actual
 
-Funcionan los tres servicios (Next.js, Spring Boot, PostgreSQL) orquestados con Docker Compose, la **autenticación** completa (registro, login, logout y rutas protegidas), la **API de libros** (CRUD con validaciones) y las **pantallas del catálogo**: listado en tabla, detalle, crear, editar y eliminar con confirmación.
+Funcionan los tres servicios (Next.js, Spring Boot, PostgreSQL) orquestados con Docker Compose, la **autenticación** completa (registro, login, logout y rutas protegidas), la **API de libros** (CRUD con validaciones), las **pantallas del catálogo** (tabla, detalle, crear, editar y eliminar con confirmación), **búsqueda, filtro por género y paginación**, **roles** (ADMIN y CONSULTA) y **estado de lectura** con filtro.
 
 ## Requisitos previos
 
@@ -25,11 +25,12 @@ No se necesita `.env`: `docker-compose.yml` trae valores de demostración. Para 
 
 ## Credenciales de prueba
 
-| Correo | Contraseña |
-|---|---|
-| `admin@clublectura.test` | `Admin1234` |
+| Rol | Correo | Contraseña |
+|---|---|---|
+| ADMIN (crear, editar y eliminar) | `admin@clublectura.test` | `Admin1234` |
+| CONSULTA (sólo lectura) | `consulta@clublectura.test` | `Consulta1234` |
 
-Son datos de demostración que crea la migración `V2__seed_usuario_admin.sql` (sólo se guarda el hash BCrypt). También puedes crear una cuenta en http://localhost:3000/register.
+Son datos de demostración que crean las migraciones `V2` y `V7` (sólo se guarda el hash BCrypt). También puedes crear una cuenta en http://localhost:3000/register: **las cuentas nuevas son siempre CONSULTA**.
 
 ## Autenticación
 
@@ -44,12 +45,32 @@ Se usan **sesiones de Spring Security** (no JWT) con contraseñas hasheadas con 
 - **Límite conocido:** las sesiones están en memoria. Si el backend se reinicia, se cierran todas las sesiones; usuarios y libros siguen en PostgreSQL.
 - El login recibe un formulario `application/x-www-form-urlencoded` (así lo procesa Spring Security); el resto de la API usa JSON.
 
+## Roles y permisos
+
+| | ADMIN | CONSULTA |
+|---|---|---|
+| Ver listado, detalle, buscar y filtrar | Sí | Sí |
+| Crear, editar y eliminar libros | Sí | No (`403 FORBIDDEN`) |
+
+- **Se aplica en el backend**: `SecurityConfig` exige sesión para `GET /api/books/**` y el rol `ADMIN` para cualquier otro método sobre `/api/books/**`. Ocultar botones en la interfaz es sólo comodidad; una petición manipulada recibe 403 igualmente.
+- **El cliente no elige su rol**: el registro público no acepta ningún campo de rol (se ignora si se envía), el constructor de `User` fija `CONSULTA` y la columna `role` tiene `DEFAULT 'CONSULTA'` y un `CHECK` en PostgreSQL.
+- El rol viaja en la sesión: si se cambia en la base de datos, se aplica en el siguiente inicio de sesión.
+- No hay administración de usuarios (no se pidió): un ADMIN adicional sólo se crea desde la base de datos.
+- En la interfaz, CONSULTA no ve «Nuevo libro» ni las acciones de la tabla, y `/books/new` y `/books/{id}/edit` muestran «Sin permisos».
+
+## Estado de lectura
+
+- Valores: `PENDIENTE`, `LEYENDO`, `LEIDO` (en la interfaz: Pendiente, Leyendo, Leído).
+- **Pertenece al libro**, no a cada usuario: el catálogo es compartido, así que el estado es el mismo para todos.
+- Opcional al enviar: al crear, si falta, queda `PENDIENTE`; al editar, si falta, se conserva el actual. Un valor inválido da 400 con los valores permitidos (el contrato distingue mayúsculas).
+- Sólo ADMIN puede cambiarlo (es una edición del libro). Se filtra con `status`, combinable con `q` y `genre`.
+
 ## Pantallas
 
 | Ruta | Pantalla |
 |---|---|
 | `/login`, `/register` | Acceso y registro (públicas). |
-| `/books` | Listado en tabla, con acceso a detalle, edición y borrado. |
+| `/books` | Listado en tabla con búsqueda, filtros, paginación y, para ADMIN, edición y borrado. |
 | `/books/new` | Crear libro. |
 | `/books/{id}` | Detalle. |
 | `/books/{id}/edit` | Editar (usa el mismo formulario que crear). |
@@ -86,6 +107,7 @@ Todos los errores siguen un formato único: `{ status, code, message, fieldError
 |---|---|
 | `q` | Texto que debe aparecer en el **título O el autor** (contiene). |
 | `genre` | Género exacto. Se combina con `q` mediante **AND**. |
+| `status` | Estado de lectura (`PENDIENTE`, `LEYENDO` o `LEIDO`). También se combina con AND. |
 | `page` | Número de página, desde 0 (por defecto 0). |
 | `size` | Elementos por página, de 1 a 50 (por defecto 10). Fuera de rango → 400. |
 
@@ -105,6 +127,7 @@ Todos los errores siguen un formato único: `{ status, code, message, fieldError
 | `publicationYear` | `anio_publicacion` | Entero obligatorio, no mayor al año actual (se calcula en cada petición). No hay año mínimo. |
 | `pages` | `paginas` | Entero obligatorio mayor que cero. |
 | `synopsis` | `sinopsis` | Opcional; si llega vacía se guarda como nula. |
+| `readingStatus` | `estado_lectura` | Opcional; ver «Estado de lectura». |
 | `id`, `createdAt`, `updatedAt` | `id`, `created_at`, `updated_at` | Los genera el sistema; si el cliente los envía se ignoran. |
 
 - Un decimal donde se espera un entero (`12.5`, `10.0`) es un error 400 del campo; no se convierte en silencio.

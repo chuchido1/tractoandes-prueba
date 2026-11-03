@@ -2,6 +2,8 @@ package com.tractoandes.catalog.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,13 +28,19 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role;
+
     protected User() {
     }
 
+    /** Toda cuenta creada desde la aplicación es de sólo lectura: el rol lo decide el servidor, nunca el cliente. */
     public User(String name, String email, String passwordHash) {
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
+        this.role = Role.CONSULTA;
     }
 
     /** Regla única de normalización del correo: se usa al registrar y al iniciar sesión. */
@@ -54,5 +62,9 @@ public class User {
 
     public String getPasswordHash() {
         return passwordHash;
+    }
+
+    public Role getRole() {
+        return role;
     }
 }

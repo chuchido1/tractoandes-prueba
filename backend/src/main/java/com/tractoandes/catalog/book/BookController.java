@@ -30,16 +30,17 @@ public class BookController {
         this.bookService = bookService;
     }
 
-    /** q: texto en título o autor. genre: género exacto. Ambos filtros se combinan con AND. */
+    /** q: texto en título o autor. genre: género exacto. status: estado de lectura. Se combinan con AND. */
     @GetMapping
     public PageResponse<BookResponse> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String genre,
+            @RequestParam(required = false) ReadingStatus status,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "La página debe ser 0 o mayor.") int page,
             @RequestParam(defaultValue = "10")
             @Min(value = 1, message = "El tamaño de página debe ser al menos 1.")
             @Max(value = 50, message = "El tamaño de página no puede superar 50.") int size) {
-        return PageResponse.from(bookService.search(q, genre, page, size), BookResponse::from);
+        return PageResponse.from(bookService.search(q, genre, status, page, size), BookResponse::from);
     }
 
     @GetMapping("/genres")

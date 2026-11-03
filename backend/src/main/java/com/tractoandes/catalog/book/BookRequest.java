@@ -35,5 +35,8 @@ public record BookRequest(
         Integer pages,
 
         @Size(max = 5000, message = "La sinopsis no puede superar los 5000 caracteres.")
-        String synopsis) {
+        String synopsis,
+
+        /** Opcional: al crear, si falta, queda PENDIENTE; al editar, si falta, se conserva el actual. */
+        ReadingStatus readingStatus) {
 }
