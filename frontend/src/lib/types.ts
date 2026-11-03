@@ -1,8 +1,13 @@
+export type Role = "ADMIN" | "CONSULTA";
+
 export type User = {
   id: string;
   name: string;
   email: string;
+  role: Role;
 };
+
+export type ReadingStatus = "PENDIENTE" | "LEYENDO" | "LEIDO";
 
 export type Book = {
   id: string;
@@ -13,6 +18,7 @@ export type Book = {
   publicationYear: number;
   pages: number;
   synopsis: string | null;
+  readingStatus: ReadingStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -31,6 +37,8 @@ export type BookFilters = {
   q: string;
   /** Género exacto; vacío = todos. */
   genre: string;
+  /** Estado de lectura; vacío = todos. */
+  status: ReadingStatus | "";
 };
 
 /** Lo que el formulario envía. Los números van null si el campo está vacío: el backend valida. */
@@ -42,6 +50,7 @@ export type BookInput = {
   publicationYear: number | null;
   pages: number | null;
   synopsis: string;
+  readingStatus: ReadingStatus;
 };
 
 export type FieldError = {

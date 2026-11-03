@@ -5,6 +5,7 @@ export function listBooks(filters: BookFilters, page: number): Promise<Page<Book
   const params = new URLSearchParams({ page: String(page) });
   if (filters.q) params.set("q", filters.q);
   if (filters.genre) params.set("genre", filters.genre);
+  if (filters.status) params.set("status", filters.status);
   return apiFetch<Page<Book>>(`/books?${params}`);
 }
 
