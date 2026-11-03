@@ -4,6 +4,7 @@ import com.tractoandes.catalog.auth.UserResponse;
 import com.tractoandes.catalog.common.error.ErrorCode;
 import com.tractoandes.catalog.common.error.JsonResponseWriter;
 import com.tractoandes.catalog.user.AppUserDetails;
+import com.tractoandes.catalog.user.Role;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,6 +41,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        // Lectura del catálogo: cualquier usuario con sesión (ADMIN o CONSULTA).
+                        .requestMatchers(HttpMethod.GET, "/api/books/**").authenticated()
+                        // Cualquier otro método sobre el catálogo (POST, PUT, DELETE...): sólo ADMIN.
+                        .requestMatchers("/api/books/**").hasRole(Role.ADMIN.name())
                         .anyRequest().authenticated())
                 // Login con formulario URL-encoded (email, password); responde JSON en vez de redirigir.
                 .formLogin(form -> form
