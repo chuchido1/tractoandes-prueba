@@ -1,6 +1,8 @@
 package com.tractoandes.catalog.book;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,9 +30,21 @@ public class BookController {
         this.bookService = bookService;
     }
 
+    /** q: texto en título o autor. genre: género exacto. Ambos filtros se combinan con AND. */
     @GetMapping
-    public List<BookResponse> list() {
-        return bookService.list().stream().map(BookResponse::from).toList();
+    public PageResponse<BookResponse> list(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String genre,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "La página debe ser 0 o mayor.") int page,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "El tamaño de página debe ser al menos 1.")
+            @Max(value = 50, message = "El tamaño de página no puede superar 50.") int size) {
+        return PageResponse.from(bookService.search(q, genre, page, size), BookResponse::from);
+    }
+
+    @GetMapping("/genres")
+    public List<String> genres() {
+        return bookService.listGenres();
     }
 
     @GetMapping("/{id}")

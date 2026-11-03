@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import tools.jackson.databind.exc.MismatchedInputException;
 
@@ -53,6 +54,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         }
         return build(HttpStatus.BAD_REQUEST, ErrorCode.MALFORMED_REQUEST,
                 "El cuerpo de la solicitud no es un JSON válido.", List.of(), request);
+    }
+
+    /** Parámetros de consulta fuera de rango (p. ej. size=500): 400 con el nombre del parámetro. */
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        List<FieldErrorDetail> fieldErrors = ex.getParameterValidationResults().stream()
+                .flatMap(result -> result.getResolvableErrors().stream()
+                        .map(error -> new FieldErrorDetail(
+                                result.getMethodParameter().getParameterName(), error.getDefaultMessage())))
+                .toList();
+        return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_PARAMETER,
+                "Algún parámetro de la consulta no es válido.", fieldErrors, request);
     }
 
     @Override
