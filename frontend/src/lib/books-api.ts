@@ -1,8 +1,15 @@
 import { apiFetch } from "./api-client";
-import type { Book, BookInput } from "./types";
+import type { Book, BookFilters, BookInput, Page } from "./types";
 
-export function listBooks(): Promise<Book[]> {
-  return apiFetch<Book[]>("/books");
+export function listBooks(filters: BookFilters, page: number): Promise<Page<Book>> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (filters.q) params.set("q", filters.q);
+  if (filters.genre) params.set("genre", filters.genre);
+  return apiFetch<Page<Book>>(`/books?${params}`);
+}
+
+export function listGenres(): Promise<string[]> {
+  return apiFetch<string[]>("/books/genres");
 }
 
 export function getBook(id: string): Promise<Book> {

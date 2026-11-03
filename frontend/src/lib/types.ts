@@ -17,6 +17,22 @@ export type Book = {
   updatedAt: string;
 };
 
+/** Página de resultados del backend. `page` empieza en 0. */
+export type Page<T> = {
+  items: T[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+export type BookFilters = {
+  /** Texto buscado en título o autor. */
+  q: string;
+  /** Género exacto; vacío = todos. */
+  genre: string;
+};
+
 /** Lo que el formulario envía. Los números van null si el campo está vacío: el backend valida. */
 export type BookInput = {
   isbn: string;
