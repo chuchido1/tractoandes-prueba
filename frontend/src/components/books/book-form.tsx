@@ -8,8 +8,10 @@ import { TextField } from "@/components/text-field";
 import { TextareaField } from "@/components/textarea-field";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api-client";
+import { listGenres } from "@/lib/books-api";
 import { describeError, fieldErrorsOf } from "@/lib/errors";
 import type { Book, BookInput } from "@/lib/types";
+import { useApiResource } from "@/lib/use-api-resource";
 
 type BookFormProps = {
   /** Libro a editar; sin él, el formulario crea uno nuevo. */
@@ -56,6 +58,7 @@ export function BookForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const { data: genres } = useApiResource(listGenres, "genres");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,12 +107,20 @@ export function BookForm({
           defaultValue={initialBook?.author}
           error={fieldErrors.author}
         />
-        <TextField
-          name="genre"
-          label="Género"
-          defaultValue={initialBook?.genre}
-          error={fieldErrors.genre}
-        />
+        <div className="grid content-start">
+          <TextField
+            name="genre"
+            label="Género"
+            list="genre-options"
+            autoComplete="off"
+            defaultValue={initialBook?.genre}
+            error={fieldErrors.genre}
+          />
+          {/* Sugerencias de los géneros ya usados; el campo sigue siendo libre. */}
+          <datalist id="genre-options">
+            {genres?.map((genre) => <option key={genre} value={genre} />)}
+          </datalist>
+        </div>
         <TextField
           name="publicationYear"
           label="Año de publicación"
