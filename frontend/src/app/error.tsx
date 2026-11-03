@@ -2,8 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 
-/** Se muestra cuando el servidor no puede validar la sesión (backend caído o con error). */
-export default function ProtectedError({ retry }: { error: unknown; retry: () => void }) {
+/**
+ * Error inesperado en cualquier ruta, p. ej. el backend caído al validar la sesión.
+ * Está en la raíz (no en (protected)) porque un error.tsx no envuelve al layout de su
+ * propio segmento, y es el layout protegido quien llama al backend.
+ */
+export default function AppError({ retry }: { error: unknown; retry: () => void }) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 p-4 text-center">
       <h1 className="text-xl font-semibold">No se pudo conectar con el servidor</h1>
