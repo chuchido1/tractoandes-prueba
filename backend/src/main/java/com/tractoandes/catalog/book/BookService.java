@@ -7,7 +7,10 @@ import com.tractoandes.catalog.common.error.NotFoundException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,9 +26,24 @@ public class BookService {
         this.bookRepository = bookRepository;
     }
 
-    public List<Book> list() {
-        // El id desempata títulos iguales para que el orden sea siempre el mismo.
-        return bookRepository.findAll(Sort.by("title", "id"));
+    /**
+     * Busca (título O autor contiene el texto) y filtra por género (AND), todo en la base
+     * de datos y antes de paginar. Una página fuera de rango devuelve la lista vacía.
+     */
+    public Page<Book> search(String text, String genre, int page, int size) {
+        Specification<Book> filters = Specification.unrestricted();
+        if (text != null && !text.isBlank()) {
+            filters = filters.and(BookSpecifications.titleOrAuthorContains(text.trim()));
+        }
+        if (genre != null && !genre.isBlank()) {
+            filters = filters.and(BookSpecifications.hasGenre(genre.trim()));
+        }
+        // El id desempata títulos iguales: el orden (y por tanto las páginas) es siempre el mismo.
+        return bookRepository.findAll(filters, PageRequest.of(page, size, Sort.by("title", "id")));
+    }
+
+    public List<String> listGenres() {
+        return bookRepository.findDistinctGenres();
     }
 
     public Book get(UUID id) {
