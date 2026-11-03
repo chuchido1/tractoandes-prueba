@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import tools.jackson.databind.exc.MismatchedInputException;
 
 /**
  * Traduce las excepciones de los controladores al formato {@link ApiError}.
@@ -40,8 +42,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        // Un valor del tipo equivocado (p. ej. 12.5 donde va un entero) se reporta como error del campo.
+        if (ex.getCause() instanceof MismatchedInputException mismatch && !mismatch.getPath().isEmpty()) {
+            String field = mismatch.getPath().getLast().getPropertyName();
+            if (field != null) {
+                return build(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                        "Los datos enviados no son válidos.",
+                        List.of(new FieldErrorDetail(field, mismatchMessage(mismatch))), request);
+            }
+        }
         return build(HttpStatus.BAD_REQUEST, ErrorCode.MALFORMED_REQUEST,
                 "El cuerpo de la solicitud no es un JSON válido.", List.of(), request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleTypeMismatch(
+            TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_PARAMETER,
+                "El valor del parámetro «" + ex.getPropertyName() + "» no es válido.", List.of(), request);
     }
 
     @Override
@@ -60,6 +78,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         };
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    ResponseEntity<Object> handleNotFound(NotFoundException ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND, ex.getMessage(), List.of(), request.getRequestURI());
+    }
+
     @ExceptionHandler(ConflictException.class)
     ResponseEntity<Object> handleConflict(ConflictException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, ex.getCode(), ex.getMessage(), List.of(), request.getRequestURI());
@@ -76,6 +99,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("Error no controlado en {}", request.getRequestURI(), ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR,
                 "Ocurrió un error inesperado. Inténtalo de nuevo más tarde.", List.of(), request.getRequestURI());
+    }
+
+    private static String mismatchMessage(MismatchedInputException mismatch) {
+        Class<?> target = mismatch.getTargetType();
+        if (target == Integer.class || target == int.class) {
+            return "Debe ser un número entero.";
+        }
+        return "El valor no tiene el formato esperado.";
     }
 
     private ResponseEntity<Object> internalError(Exception ex, WebRequest request) {
